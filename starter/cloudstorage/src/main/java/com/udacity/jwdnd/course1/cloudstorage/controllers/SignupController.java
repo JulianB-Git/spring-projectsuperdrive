@@ -1,0 +1,57 @@
+package com.udacity.jwdnd.course1.cloudstorage.controllers;
+
+
+import com.udacity.jwdnd.course1.cloudstorage.constants.ModalMessages;
+import com.udacity.jwdnd.course1.cloudstorage.models.User;
+import com.udacity.jwdnd.course1.cloudstorage.services.UserService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+@Controller()
+@RequestMapping("/signup")
+public class SignupController {
+
+    private final UserService userService;
+
+    public SignupController(UserService userService) {
+        this.userService = userService;
+    }
+
+    @GetMapping()
+    public String signupView() {
+        return "signup";
+    }
+
+    @PostMapping()
+    public String signupUser(@ModelAttribute User user, Model model, RedirectAttributes redirectAttributes) {
+        String signupError = null;
+
+        //Check if username already exists
+        if (!userService.isUsernameAvailable(user.getUsername())) {
+            signupError = ModalMessages.ERROR_USER_EXISTS;
+        }
+
+        //Checks if the database operation returned the number of rows changed
+        if (signupError == null) {
+            int rowsAdded = userService.createUser(user);
+            if (rowsAdded < 0) {
+                signupError = ModalMessages.ERROR_SIGNUP;
+            }
+        }
+
+        if (signupError == null) {
+            redirectAttributes.addFlashAttribute("signupSuccess", true);
+        } else {
+            model.addAttribute("signupError", signupError);
+            return "signup";
+        }
+
+        return "redirect:/login";
+    }
+
+}
